@@ -87,7 +87,7 @@ ol{padding-left:20px;line-height:1.6;color:var(--mut)}
 <script>
 const DEF_CATS=["Breakfast","Lunch","Dinner","Snack","Drink","Sweet","Bakery","Ingredient","Other"];
 const DEF_TAGS=["No sugar","Gluten-free","Clean ingredients","Great snack","Low calorie","High protein","Vegan","Lactose-free"];
-let products=[],F={q:'',cat:'',tag:'',country:'',shop:'',fav:false},form={};
+let products=[],F={q:'',cat:'',tag:'',country:'',shop:'',fav:false},draft={};
 const photoCache={};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -194,41 +194,41 @@ async function remove(id){
 function openForm(id){
   if(!cfg()){openSettings();return}
   const p=products.find(x=>x.id===id);
-  form=p?{...p,tags:[...p.tags],newPhoto:''}:{id:uid(),name:'',thumb:'',hasPhoto:false,newPhoto:'',country:'',shop:'',cat:DEF_CATS[0],tags:[],notes:'',fav:false,added:Date.now()};
-  const cats=uniq([...DEF_CATS,...products.map(x=>x.cat),form.cat]);
+  draft=p?{...p,tags:[...p.tags],newPhoto:''}:{id:uid(),name:'',thumb:'',hasPhoto:false,newPhoto:'',country:'',shop:'',cat:DEF_CATS[0],tags:[],notes:'',fav:false,added:Date.now()};
+  const cats=uniq([...DEF_CATS,...products.map(x=>x.cat),draft.cat]);
   $('#form').innerHTML=`<div class="bar"><button onclick="closeSheet('form')">Cancel</button><b>${p?'Edit product':'Add product'}</b><button onclick="save()" style="font-weight:600">Save</button></div>
   <div class="pad">
-  <div id="prev">${form.thumb?`<img src="${form.thumb}">`:''}</div>
+  <div id="prev">${draft.thumb?`<img src="${draft.thumb}">`:''}</div>
   <div class="row"><label class="btn">📷 Take photo<input type="file" accept="image/*" capture="environment" onchange="pickPhoto(this)"></label>
   <label class="btn">🖼 Choose<input type="file" accept="image/*" onchange="pickPhoto(this)"></label></div>
   <h2>Product</h2>
-  <input placeholder="Name" value="${esc(form.name)}" oninput="form.name=this.value">
-  <select onchange="form.cat=this.value">${cats.map(c=>`<option ${c===form.cat?'selected':''}>${esc(c)}</option>`).join('')}</select>
+  <input placeholder="Name" value="${esc(draft.name)}" oninput="draft.name=this.value">
+  <select onchange="draft.cat=this.value">${cats.map(c=>`<option ${c===draft.cat?'selected':''}>${esc(c)}</option>`).join('')}</select>
   <h2>Where</h2>
-  <input placeholder="Country" list="dc" value="${esc(form.country)}" oninput="form.country=this.value">
-  <input placeholder="Supermarket" list="ds" value="${esc(form.shop)}" oninput="form.shop=this.value">
+  <input placeholder="Country" list="dc" value="${esc(draft.country)}" oninput="draft.country=this.value">
+  <input placeholder="Supermarket" list="ds" value="${esc(draft.shop)}" oninput="draft.shop=this.value">
   <datalist id="dc">${uniq(products.map(x=>x.country)).map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
   <datalist id="ds">${uniq(products.map(x=>x.shop)).map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
   <h2>Nutrition tags</h2><div class="chips" id="tagbox"></div>
   <div class="row"><input id="newtag" placeholder="New tag…" style="margin:0"><button class="btn" style="flex:0 0 80px" onclick="addTag()">Add</button></div>
-  <h2>Notes</h2><textarea rows="3" placeholder="Taste, price, shelf location…" oninput="form.notes=this.value">${esc(form.notes)}</textarea>
+  <h2>Notes</h2><textarea rows="3" placeholder="Taste, price, shelf location…" oninput="draft.notes=this.value">${esc(draft.notes)}</textarea>
   </div>`;
   renderTags();show('form')}
 function renderTags(){
-  const all=uniq([...DEF_TAGS,...products.flatMap(p=>p.tags),...form.tags]).sort();
-  $('#tagbox').innerHTML=all.map(t=>`<span class="chip ${form.tags.includes(t)?'on':''}" data-t="${esc(t)}" onclick="toggleTag(this.dataset.t)">${esc(t)}</span>`).join('')}
-function toggleTag(t){form.tags=form.tags.includes(t)?form.tags.filter(x=>x!==t):[...form.tags,t];renderTags()}
-function addTag(){const i=$('#newtag'),t=i.value.trim();if(t&&!form.tags.includes(t))form.tags.push(t);i.value='';renderTags()}
+  const all=uniq([...DEF_TAGS,...products.flatMap(p=>p.tags),...draft.tags]).sort();
+  $('#tagbox').innerHTML=all.map(t=>`<span class="chip ${draft.tags.includes(t)?'on':''}" data-t="${esc(t)}" onclick="toggleTag(this.dataset.t)">${esc(t)}</span>`).join('')}
+function toggleTag(t){draft.tags=draft.tags.includes(t)?draft.tags.filter(x=>x!==t):[...draft.tags,t];renderTags()}
+function addTag(){const i=$('#newtag'),t=i.value.trim();if(t&&!draft.tags.includes(t))draft.tags.push(t);i.value='';renderTags()}
 function resize(img,max,q){const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q)}
 function pickPhoto(inp){
   const file=inp.files[0];if(!file)return;
-  const img=new Image();img.onload=()=>{form.newPhoto=resize(img,1000,.72);form.thumb=resize(img,260,.6);URL.revokeObjectURL(img.src);$('#prev').innerHTML=`<img src="${form.thumb}">`};
+  const img=new Image();img.onload=()=>{draft.newPhoto=resize(img,1000,.72);draft.thumb=resize(img,260,.6);URL.revokeObjectURL(img.src);$('#prev').innerHTML=`<img src="${draft.thumb}">`};
   img.src=URL.createObjectURL(file);inp.value=''}
 async function save(){
-  if(!form.name.trim()){alert('Please add a name');return}
-  const p={id:form.id,name:form.name.trim(),thumb:form.thumb||'',hasPhoto:!!(form.hasPhoto||form.newPhoto),country:form.country.trim(),shop:form.shop.trim(),cat:form.cat,tags:form.tags,notes:form.notes,fav:form.fav,added:form.added};
+  if(!draft.name.trim()){alert('Please add a name');return}
+  const p={id:draft.id,name:draft.name.trim(),thumb:draft.thumb||'',hasPhoto:!!(draft.hasPhoto||draft.newPhoto),country:draft.country.trim(),shop:draft.shop.trim(),cat:draft.cat,tags:draft.tags,notes:draft.notes,fav:draft.fav,added:draft.added};
   try{await busy('Saving to GitHub…',async()=>{
-    if(form.newPhoto){await putPhoto(p.id,form.newPhoto);delete photoCache[p.id]}
+    if(draft.newPhoto){await putPhoto(p.id,draft.newPhoto);delete photoCache[p.id]}
     await mutate(l=>{const i=l.findIndex(x=>x.id===p.id);if(i>=0)l[i]=p;else l.push(p);return l},'Save '+p.name)})}catch(e){return}
   renderFilters();renderGrid();closeSheet('form');
   if($('#detail').classList.contains('on'))openDetail(p.id)}
