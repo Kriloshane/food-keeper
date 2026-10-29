@@ -54,8 +54,8 @@ details{background:var(--card);border:1px solid var(--bd);border-radius:12px;pad
 .ig{margin-bottom:12px}
 ol{padding-left:20px;line-height:1.6;color:var(--mut)}
 nav{position:fixed;bottom:0;left:0;right:0;z-index:5;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;background:none;border:0;padding:8px 0;font-size:20px;color:var(--mut)}
-nav button span{display:block;font-size:11px}nav button.on{color:var(--ac)}
+nav button{flex:1;background:none;border:0;padding:12px 0;font-size:14px;font-weight:500;color:var(--mut)}
+nav button span{display:block}nav button.on{color:var(--ac)}
 #busy{display:none;position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.35);color:#fff;align-items:center;justify-content:center;font-size:17px}
 #busy.on{display:flex}
 </style></head><body>
@@ -68,9 +68,9 @@ nav button span{display:block;font-size:11px}nav button.on{color:var(--ac)}
 <div class="filters" id="flt"></div>
 <div class="grid" id="grid"></div>
 <nav id="nav">
-  <button data-t="products" onclick="setTab('products')">🥫<span>Products</span></button>
-  <button data-t="recipes" onclick="setTab('recipes')">🍳<span>Recipes</span></button>
-  <button data-t="places" onclick="setTab('places')">📍<span>Places</span></button>
+  <button data-t="products" onclick="setTab('products')"><span>Products</span></button>
+  <button data-t="recipes" onclick="setTab('recipes')"><span>Recipes</span></button>
+  <button data-t="places" onclick="setTab('places')"><span>Places</span></button>
 </nav>
 
 <div class="sheet" id="detail"></div>
@@ -100,8 +100,8 @@ RT=["Cheesy","Warm","Refreshing","Filling","Lean","Light","Crunchy","Creamy","Qu
 PC=["Restaurant","Cafe","Bakery","Bar","Takeaway","Shop"];
 /* field = [key, type, label, default chips] */
 const T={
- products:{n:'product',ph:1,f:[['name','text','Name'],['cats','multi','Category',DC],['tags','multi','Nutrition tags',DT],['country','text','Country'],['shop','text','Supermarket'],['notes','area','Notes']],
-  flt:[['cats','Category'],['tags','Tag'],['country','Country'],['shop','Supermarket']],sub:p=>[p.shop,p.country]},
+ products:{n:'product',ph:1,f:[['name','text','Name'],['cats','multi','Category',DC],['tags','multi','Nutrition tags',DT],['country','text','Country'],['shop','multi','Supermarkets'],['notes','area','Notes']],
+  flt:[['cats','Category'],['tags','Tag'],['country','Country'],['shop','Supermarket']],sub:p=>[...(Array.isArray(p.shop)?p.shop:(p.shop?[p.shop]:[])),p.country]},
  recipes:{n:'recipe',ph:1,f:[['name','text','Name'],['cats','multi','Category',RC],['tags','multi','Tags',RT],['ing','ing'],['method','area','Method'],['notes','area','Notes']],
   flt:[['cats','Category'],['tags','Tag']],sub:p=>p.cats},
  places:{n:'place',ph:0,f:[['name','text','Name'],['cats','multi','Type',PC],['tags','multi','Safe-food tags',DT],['area','text','Area'],['map','text','Google Maps link (optional)'],['notes','area','Safe foods & notes']],
@@ -109,10 +109,10 @@ const T={
 let D={products:[],recipes:[],places:[]},tab='products',F={q:''},draft={},ft='products',hist=[];
 const photoCache={};
 const $=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&','<':'<','>':'>','"':'"',"'":'&#39;'}[c]));
 const uniq=a=>[...new Set(a.filter(Boolean))];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-const norm=p=>{if(!p.cats)p.cats=p.cat?[p.cat]:[];delete p.cat;return p};
+const norm=p=>{if(!p.cats)p.cats=p.cat?[p.cat]:[];delete p.cat;if(typeof p.shop==='string')p.shop=p.shop?[p.shop]:[];if(p.shop&&!Array.isArray(p.shop))p.shop=[];return p};
 
 /* ---------- GitHub storage ---------- */
 const cfg=()=>{try{return JSON.parse(localStorage.getItem('fk-cfg')||'null')}catch(e){return null}};
@@ -185,7 +185,7 @@ function rf(){
 function rg(){
   const c=T[tab],q=(F.q||'').toLowerCase();
   const l=D[tab].filter(p=>(!F.fav||p.fav)&&c.flt.every(([k])=>!F[k]||[].concat(p[k]||[]).includes(F[k]))&&
-    (!q||[p.name,p.notes,...(p.tags||[]),...(p.cats||[]),...(p.ing||[]).map(x=>x.t)].some(x=>(x||'').toLowerCase().includes(q)))).sort((a,b)=>b.added-a.added);
+    (!q||[p.name,p.notes,...(p.tags||[]),...(p.cats||[]),...(Array.isArray(p.shop)?p.shop:[]),...(p.ing||[]).map(x=>x.t)].some(x=>(x||'').toLowerCase().includes(q)))).sort((a,b)=>b.added-a.added);
   $('#grid').innerHTML=l.map(p=>`<div class="card" onclick="hist=[];openDetail('${tab}','${p.id}')">${c.ph?`<div class="im">${p.thumb?`<img src="${p.thumb}">`:''}${p.fav?'<span class="h">♥</span>':''}</div>`:''}<div class="t"><b>${!c.ph&&p.fav?'♥ ':''}${esc(p.name)}</b><small>${esc(c.sub(p).filter(Boolean).join(' · '))}</small></div></div>`).join('')
   ||`<p class="empty">${D[tab].length?'Nothing matches these filters.':'Nothing here yet.<br>Tap + to add your first '+c.n+'.'}</p>`}
 
@@ -196,7 +196,7 @@ function bk(){if(hist.length){const[t,i]=hist.pop();openDetail(t,i)}else closeSh
 function openDetail(ty,id){
   const p=D[ty].find(x=>x.id===id);if(!p)return;
   const ch=(a,c)=>a?.length?`<div class="chips">${a.map(t=>`<span class="chip ${c}">${esc(t)}</span>`).join('')}</div>`:'';
-  const meta=[p.shop&&'🛒 '+p.shop,p.country&&'🌍 '+p.country,p.area&&'📍 '+p.area].filter(Boolean).map(esc).join('<br>');
+  const shops=Array.isArray(p.shop)?p.shop:(p.shop?[p.shop]:[]);const meta=[shops.length&&'🛒 '+shops.join(', '),p.country&&'🌍 '+p.country,p.area&&'📍 '+p.area].filter(Boolean).map(esc).join('<br>');
   const mp=ty==='places'?(/^https?:\/\//i.test(p.map||'')?p.map:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.name+' '+(p.area||''))):'';
   const used=ty==='products'?D.recipes.filter(r=>(r.ing||[]).some(x=>x.p===id)):[];
   const lnk=(t,i,n)=>`<a href="#" onclick="hist.push(['${ty}','${id}']);openDetail('${t}','${i}');return false">${esc(n)}</a>`;
