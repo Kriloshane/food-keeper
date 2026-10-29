@@ -219,6 +219,7 @@ function rf(){
     return `<select onchange="F['${k}']=this.value;rg()"><option value="">${l}: any</option>${v.map(x=>`<option value="${esc(x)}" ${F[k]===x?'selected':''}>${esc(x)}</option>`).join('')}</select>`}).join('')}
 function rg(){
   if(tab==='lists'){rgLists();return}
+  $('#grid').className='grid';
   const c=T[tab],q=(F.q||'').toLowerCase();
   const l=D[tab].filter(p=>(!F.fav||p.fav)&&c.flt.every(([k])=>!F[k]||[].concat(p[k]||[]).includes(F[k]))&&
     (!q||[p.name,p.notes,...(p.tags||[]),...(p.cats||[]),...shopsOf(p),...(p.ing||[]).map(x=>x.t)].some(x=>(x||'').toLowerCase().includes(q)))).sort((a,b)=>b.added-a.added);
